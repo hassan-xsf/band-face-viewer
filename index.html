@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Band Viewer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%228%22 y=%222%22 width=%2216%22 height=%2228%22 rx=%226%22 fill=%22%23ff6a00%22/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --line: #e2e5ea; --text: #1b1f27; --muted: #677083;
+  --accent: #ff6a00; --accent-soft: #fff0e5; --ok: #16a34a; --warn: #c27c00; --err: #dc2626;
+  --band: #1d1f24; --band-edge: #3a3d45; --code: #f7f8fa;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115; --panel: #171a20; --line: #262a33; --text: #e7e9ee; --muted: #8b93a5;
+    --accent: #ff7a1a; --accent-soft: #2a1d12; --ok: #4ade80; --warn: #fbbf24; --err: #f87171;
+    --band: #0b0c0f; --band-edge: #2c2f36; --code: #12141a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --panel: #171a20; --line: #262a33; --text: #e7e9ee; --muted: #8b93a5;
+  --accent: #ff7a1a; --accent-soft: #2a1d12; --ok: #4ade80; --warn: #fbbf24; --err: #f87171;
+  --band: #0b0c0f; --band-edge: #2c2f36; --code: #12141a;
+  color-scheme: dark;
+}
+/* the band's system font, so labels measure and look like on the watch */
+@font-face { font-family: "MiSans"; src: url("MiSans-Demibold.woff2") format("woff2"); font-weight: 100 900; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+header {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5;
+}
+header h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+header .sub { color: var(--muted); font-size: 12.5px; }
+header .grow { flex: 1; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 6px 12px;
+  cursor: pointer; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.btn:focus-visible, .tab:focus-visible, .face:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+main { display: grid; grid-template-columns: 250px minmax(380px, 1fr) 380px; gap: 0; height: calc(100% - 53px); }
+aside, section { overflow: auto; }
+aside.left { border-right: 1px solid var(--line); padding: 12px; }
+aside.right { border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+h2 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 14px 4px 8px; font-weight: 650; }
+h2:first-child { margin-top: 2px; }
+
+.face {
+  display: block; width: 100%; text-align: left; border: 1px solid transparent; border-radius: 10px;
+  padding: 8px 10px; background: none; cursor: pointer; margin-bottom: 2px;
+}
+.face:hover { background: var(--bg); }
+.face.active { background: var(--accent-soft); border-color: var(--accent); }
+.face b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.face span { color: var(--muted); font-size: 12px; }
+.empty { color: var(--muted); font-size: 13px; padding: 4px 6px; }
+.dropzone {
+  margin-top: 14px; border: 1.5px dashed var(--line); border-radius: 12px; padding: 16px 12px;
+  text-align: center; color: var(--muted); font-size: 13px; cursor: pointer;
+}
+.dropzone:hover { border-color: var(--accent); color: var(--text); }
+
+section.stage { display: flex; flex-direction: column; align-items: center; padding: 18px 16px 24px; gap: 14px; }
+.title-row { text-align: center; }
+.title-row .name { font-size: 18px; font-weight: 650; }
+.title-row .meta { color: var(--muted); font-size: 12.5px; }
+.band {
+  position: relative; padding: 16px; border-radius: 72px; background: var(--band); margin: 28px 0;
+  box-shadow: 0 0 0 2px var(--band-edge), 0 24px 60px rgba(0,0,0,.35);
+}
+.band::before, .band::after {
+  content: ""; position: absolute; left: 50%; transform: translateX(-50%); width: 46%; height: 40px;
+  background: linear-gradient(var(--band-edge), var(--band)); z-index: -1;
+}
+.band::before { top: -30px; border-radius: 16px 16px 0 0; }
+.band::after { bottom: -30px; border-radius: 0 0 16px 16px; transform: translateX(-50%) scaleY(-1); }
+canvas#screen {
+  display: block; width: 336px; height: 480px; border-radius: 56px; background: #000;
+  touch-action: none; cursor: pointer; user-select: none;
+}
+canvas#screen.pixel { image-rendering: pixelated; }
+.stats { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.stats b { color: var(--text); font-weight: 600; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.switch-check { font-size: 13px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); }
+.switch-check.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.switch-check.bad { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, transparent); }
+.hint { color: var(--muted); font-size: 12.5px; text-align: center; max-width: 420px; }
+
+.tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+.tab { border: none; background: none; padding: 8px 12px; border-radius: 8px 8px 0 0; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.tab .count { font-size: 11px; background: var(--err); color: #fff; border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+.pane { display: none; padding: 12px; }
+.pane.active { display: block; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); }
+label.field input, label.field select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+label.check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 6px; }
+.files { list-style: none; margin: 0; padding: 0; }
+.files li { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.files .thumb { width: 44px; height: 44px; display: grid; place-items: center; background: repeating-conic-gradient(#8882 0 25%, transparent 0 50%) 0 0/10px 10px; border-radius: 6px; flex: none; }
+.files .thumb img { max-width: 44px; max-height: 44px; image-rendering: pixelated; }
+.files .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files .sz { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+pre.code { margin: 0; background: var(--code); border: 1px solid var(--line); border-radius: 10px; padding: 10px 0; font: 12px/1.5 Consolas, "Cascadia Mono", monospace; overflow: auto; counter-reset: ln; }
+pre.code span { display: block; padding: 0 12px 0 0; white-space: pre; }
+pre.code span::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 40px; padding-right: 12px; text-align: right; color: var(--muted); opacity: .6; }
+.log { font: 12px/1.5 Consolas, "Cascadia Mono", monospace; }
+.log div { padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: pre-wrap; word-break: break-word; }
+.log .warn { color: var(--warn); }
+.log .error { color: var(--err); }
+.log .info { color: var(--muted); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+
+#drop {
+  position: fixed; inset: 0; display: none; place-items: center; z-index: 20;
+  background: color-mix(in srgb, var(--accent) 18%, transparent); backdrop-filter: blur(2px);
+  font-size: 22px; font-weight: 650; color: var(--text);
+}
+#drop.show { display: grid; }
+#toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0;
+  background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px;
+  transition: .2s; pointer-events: none; max-width: min(560px, 92vw); text-align: center; z-index: 30;
+}
+#toast.show { opacity: 1; transform: translateX(-50%); }
+
+@media (max-width: 1100px) {
+  main { grid-template-columns: 1fr; height: auto; }
+  aside.left, aside.right { border: none; border-top: 1px solid var(--line); }
+  section.stage { order: -1; }
+}
+@media (max-width: 420px) {
+  canvas#screen { width: calc(100vw - 64px); height: auto; aspect-ratio: 336 / 480; border-radius: 44px; }
+  header .sub { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Band Viewer</h1>
+  <span class="sub">Mi Band 10 Pro · 336 × 480 · Lua watchfaces</span>
+  <span class="grow"></span>
+  <button class="btn primary" id="openBtn">Open .face</button>
+  <input type="file" id="fileInput" accept=".face" hidden>
+</header>
+
+<main>
+  <aside class="left">
+    <h2>Drop folder · faces/</h2>
+    <div id="listFaces"></div>
+    <div class="dropzone" id="dropzone" role="button" tabindex="0">Drop a <b>.face</b> here<br>or click to pick one</div>
+  </aside>
+
+  <section class="stage">
+    <div class="title-row">
+      <div class="name" id="faceName">No face loaded</div>
+      <div class="meta" id="faceMeta">Put a .face in faces/, or drop one anywhere on this page</div>
+    </div>
+    <div class="band"><canvas id="screen" width="336" height="480"></canvas></div>
+    <div class="stats">
+      <span>FPS <b id="fps">0</b></span>
+      <span>Lua <b id="luaMs">0</b> ms/frame</span>
+      <span>Objects <b id="objs">0</b></span>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="restartBtn" title="Run main.lua again from scratch">Restart</button>
+      <button class="btn" id="screenBtn" title="Calls pageOnPause / pageOnResume like the band does">Screen off</button>
+      <button class="btn" id="mapBtn" title="Highlight everything that takes taps">Touch map</button>
+      <button class="btn" id="zoomBtn">Zoom 1×</button>
+      <button class="btn" id="pngBtn" title="Download this screen as a 336×480 PNG (use it as images/preview.png)">Save PNG</button>
+    </div>
+    <div class="switch-check" id="switchCheck">Switch check: waiting</div>
+    <div class="hint">Click = tap · hold = long-press · Space = tap the centre. Long-press empty space to test that you can still leave the watchface.</div>
+  </section>
+
+  <aside class="right">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="data">Data</button>
+      <button class="tab" data-tab="files">Files</button>
+      <button class="tab" data-tab="code">main.lua</button>
+      <button class="tab" data-tab="console">Console<span class="count" id="errCount" hidden>0</span></button>
+    </div>
+
+    <div class="pane active" id="pane-data">
+      <dl class="kv" id="info"></dl>
+      <h2>Simulated band data (dataman)</h2>
+      <div class="grid2">
+        <label class="field">Time<input type="time" id="dTime"></label>
+        <label class="field">Date<input type="date" id="dDate"></label>
+        <label class="field">Battery %<input type="number" id="dBattery" min="0" max="100" value="76"></label>
+        <label class="field">Steps<input type="number" id="dSteps" min="0" value="6420"></label>
+        <label class="field">Heart rate<input type="number" id="dHr" min="0" value="72"></label>
+        <label class="field">Calories<input type="number" id="dCal" min="0" value="312"></label>
+        <label class="field">SpO₂ %<input type="number" id="dSpo2" min="0" max="100" value="98"></label>
+        <label class="field">Sleep score<input type="number" id="dSleep" min="0" max="100" value="84"></label>
+        <label class="field">Temp °C<input type="number" id="dTemp" value="24"></label>
+        <label class="field">Weather code<input type="number" id="dWeather" min="0" value="1"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="dLive" checked> Live clock (ignore the time/date fields)</label>
+      <label class="check"><input type="checkbox" id="d24" checked> 24-hour time</label>
+      <label class="check"><input type="checkbox" id="dCharge"> Charging</label>
+      <label class="check"><input type="checkbox" id="dBt" checked> Bluetooth connected</label>
+      <label class="check"><input type="checkbox" id="dDnd"> Do not disturb</label>
+    </div>
+
+    <div class="pane" id="pane-files"><ul class="files" id="fileList"></ul></div>
+    <div class="pane" id="pane-code"><pre class="code" id="code"></pre></div>
+    <div class="pane" id="pane-console">
+      <div class="toolbar" style="justify-content:flex-start;margin-bottom:8px">
+        <button class="btn" id="clearLog">Clear</button>
+        <button class="btn" id="clearSave" title="Forget what this face wrote to /data">Clear saved data</button>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+  </aside>
+</main>
+
+<div id="drop">Drop the .face to view it</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="fengari-web.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const cv = $("screen"), ctx = cv.getContext("2d");
+const SERVED = location.protocol.startsWith("http");
+let SHIM = "";
+
+// ------------------------------------------------------------------ .face parsing
+// Layout (EasyFace compiler v4): title at 0x68, id at 0x28, file table from 0x110
+// to u32@0x108 (16-byte rows: idx, type, 0, offset, size). Each file record:
+// u32 (name length << 24 | data length), 16 zero bytes, name, raw data.
+function parseFace(buf) {
+  const d = new Uint8Array(buf), dv = new DataView(buf);
+  const str = (o, n) => new TextDecoder().decode(d.subarray(o, o + n)).replace(/\0.*$/s, "");
+  const face = { title: str(0x68, 64) || "(untitled)", id: str(0x28, 16), size: d.length, files: new Map() };
+  const add = (o, size) => {
+    if (o + 24 > d.length) return false;
+    const h = dv.getUint32(o, true), L = h >>> 24, n = h & 0xffffff;
+    if (!L || 20 + L + n !== size || o + size > d.length) return false;
+    const name = str(o + 20, L);
+    if (!/^[\x20-\x7e]+$/.test(name)) return false;
+    face.files.set(name, d.slice(o + 20 + L, o + 20 + L + n));
+    return true;
+  };
+  if (d.length > 0x120 && d[0] === 0x5a && d[1] === 0xa5) {
+    const end = Math.min(dv.getUint32(0x108, true), d.length);
+    for (let o = 0x110; o + 16 <= end; o += 16) add(dv.getUint32(o + 8, true), dv.getUint32(o + 12, true));
+  }
+  if (!face.files.size) { // fallback: scan for file records
+    for (let o = 0; o + 24 < d.length; o++) {
+      const L = d[o + 3];
+      if (L < 3 || L > 200 || d[o + 4] || d[o + 19] || d[o + 20] < 0x21) continue;
+      let zero = true; for (let i = 4; i < 20; i++) if (d[o + i]) { zero = false; break; }
+      if (!zero) continue;
+      const n = dv.getUint32(o, true) & 0xffffff;
+      if (add(o, 20 + L + n)) o += 20 + L + n - 1;
+    }
+  }
+  const main = [...face.files.keys()].find(k => /(^|\/)main\.lua$/.test(k));
+  face.main = main;
+  face.base = main ? main.slice(0, -"main.lua".length) : "";
+  return face;
+}
+
+// ------------------------------------------------------------------ state
+const state = {
+  face: null, key: null, mtime: 0, imgs: new Map(), run: null,
+  map: false, zoom: 1, screenOn: true, errors: 0,
+};
+
+// ------------------------------------------------------------------ host for the Lua shim
+function makeHost(face) {
+  const base = "/face/" + face.base;
+  const storeKey = p => "bandviewer:" + face.title + ":" + p;
+  const memStore = new Map();
+  const imgFor = src => {
+    if (typeof src !== "string") return undefined;
+    let k = src.startsWith(base) ? src.slice(base.length) : src.replace(/^\/+/, "");
+    return state.imgs.get(k) || state.imgs.get(k.split("/").pop());
+  };
+  const fontOf = (size, weight) => `${weight} ${size}px "MiSans", "Segoe UI", system-ui, sans-serif`;
+  // img_recolor: mix the color over the image's opaque pixels (cached per color)
+  const tints = new Map();
+  const tinted = (im, col, ra) => {
+    const k = im.src + col + ra; let c = tints.get(k);
+    if (!c) {
+      c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
+      const x = c.getContext("2d"); x.drawImage(im, 0, 0);
+      x.globalCompositeOperation = "source-atop"; x.globalAlpha = ra; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height);
+      tints.set(k, c);
+    }
+    return c;
+  };
+  const hex = c => "#" + (c >>> 0 & 0xffffff).toString(16).padStart(6, "0");
+  const roundRect = (x, y, w, h, r) => {
+    r = Math.max(0, Math.min(r >= 0x7fff ? Math.min(w, h) / 2 : r, w / 2, h / 2));
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+  };
+  return {
+    scriptPath: base,
+    log: (lvl, msg) => log(lvl, msg),
+    hasImg: src => !!imgFor(src),
+    imgW: src => imgFor(src)?.width ?? 0,
+    imgH: src => imgFor(src)?.height ?? 0,
+    measure: (s, size, weight) => { ctx.font = fontOf(size, weight); return ctx.measureText(s).width; },
+    clear: () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 336, 480); },
+    rect: (x, y, w, h, c, a, r, bw, bc, ba) => {
+      if (a > 0) { ctx.globalAlpha = a; ctx.fillStyle = hex(c); roundRect(x, y, w, h, r); ctx.fill(); }
+      if (bw > 0 && ba > 0) {
+        ctx.globalAlpha = ba; ctx.strokeStyle = hex(bc); ctx.lineWidth = bw;
+        roundRect(x + bw / 2, y + bw / 2, w - bw, h - bw, Math.max(0, r - bw / 2)); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    },
+    text: (s, x, y, w, c, size, weight, align, a) => {
+      ctx.globalAlpha = a; ctx.fillStyle = hex(c); ctx.font = fontOf(size, weight); ctx.textBaseline = "top";
+      ctx.textAlign = align; const ax = align === "center" ? x + w / 2 : align === "right" ? x + w : x;
+      s.split("\n").forEach((line, i) => ctx.fillText(line, ax, y + i * size * 1.2 + size * 0.1));
+      ctx.globalAlpha = 1; ctx.textAlign = "left";
+    },
+    img: (src, x, y, w, h, angle, zoom, a, rc, ra) => {
+      let im = imgFor(src); if (!im) return;
+      if (ra > 0) im = tinted(im, hex(rc), ra);
+      ctx.globalAlpha = a;
+      if (angle || zoom !== 256) {
+        ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.rotate(angle / 10 * Math.PI / 180);
+        const z = zoom / 256; ctx.scale(z, z); ctx.drawImage(im, -im.width / 2, -im.height / 2); ctx.restore();
+      } else ctx.drawImage(im, x, y);
+      ctx.globalAlpha = 1;
+    },
+    clip: (x, y, w, h, r) => { ctx.save(); roundRect(x, y, w, h, r); ctx.clip(); },
+    unclip: () => ctx.restore(),
+    mark: (x, y, w, h) => {
+      ctx.fillStyle = "rgba(255,40,40,.22)"; ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = "rgba(255,40,40,.9)"; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, w - 1, h - 1);
+    },
+    longpress: (free, what) => toast(free
+      ? "Long-press hit empty space: the band gets it, so you can switch watchface ✓"
+      : `Long-press landed on ${what}. It takes taps here, so the band may not get it (switching could be blocked)`),
+    data: name => simData(name),
+    load: path => {
+      if (memStore.has(path)) return memStore.get(path) ?? undefined;
+      try { const v = localStorage.getItem(storeKey(path)); if (v !== null) return v; } catch {}
+      const k = path.startsWith(base) ? path.slice(base.length) : null;
+      const f = k !== null && state.face.files.get(face.base + k);
+      return f ? new TextDecoder().decode(f) : undefined;
+    },
+    store: (path, data) => {
+      memStore.set(path, data ?? null);
+      try { data == null ? localStorage.removeItem(storeKey(path)) : localStorage.setItem(storeKey(path), data); } catch {}
+    },
+    clearStore: () => {
+      memStore.clear();
+      try { Object.keys(localStorage).filter(k => k.startsWith("bandviewer:" + face.title + ":")).forEach(k => localStorage.removeItem(k)); } catch {}
+    },
+  };
+}
+
+// ------------------------------------------------------------------ run a face
+function newLua() {
+  const { lua, lauxlib, lualib, interop, to_luastring } = fengari;
+  const L = lauxlib.luaL_newstate();
+  lualib.luaL_openlibs(L);
+  lauxlib.luaL_requiref(L, to_luastring("js"), interop.luaopen_js, 1);
+  lua.lua_pop(L, 1);
+  return L;
+}
+function runChunk(L, code, name) {
+  const { lua, lauxlib, to_luastring } = fengari;
+  if (lauxlib.luaL_loadbuffer(L, to_luastring(code), null, to_luastring("=" + name)) !== lua.LUA_OK ||
+      lua.lua_pcall(L, 0, 0, 0) !== lua.LUA_OK) {
+    throw new Error(lua.lua_tojsstring(L, -1));
+  }
+}
+
+async function loadImages(face) {
+  for (const u of state.imgs.values()) if (u._url) URL.revokeObjectURL(u._url);
+  state.imgs = new Map();
+  await Promise.all([...face.files].filter(([n]) => /\.(png|jpe?g|gif|bmp|webp)$/i.test(n)).map(([n, bytes]) =>
+    new Promise(res => {
+      const im = new Image(), url = URL.createObjectURL(new Blob([bytes]));
+      im._url = url; im.onload = res; im.onerror = () => { log("warn", "could not decode " + n); res(); };
+      im.src = url;
+      state.imgs.set(n.slice(face.base.length), im);
+    })));
+}
+
+async function openFace(buf, label, key, mtime) {
+  let face;
+  try { face = parseFace(buf); } catch (e) { toast("Not a .face file: " + e.message); return; }
+  state.face = face; state.key = key || null; state.mtime = mtime || 0;
+  if (key) history.replaceState(null, "", "#" + encodeURIComponent(key));
+  await loadImages(face);
+  await document.fonts.load('600 20px "MiSans"').catch(() => {});
+  $("faceName").textContent = face.title;
+  $("faceMeta").textContent = `${label} · id ${face.id || "?"} · ${(face.size / 1024).toFixed(0)} KB · ${face.files.size} files`;
+  renderInfo(face); renderFiles(face); renderCode(face); highlightList();
+  restart();
+}
+
+function restart() {
+  const face = state.face; if (!face) return;
+  $("log").textContent = ""; state.errors = 0; updateErrCount();
+  state.screenOn = true; $("screenBtn").textContent = "Screen off";
+  state.run = null;
+  if (!face.main) {
+    log("warn", "No main.lua in this .face: it's an image-based watchface, not a Lua one. Its files are listed under Files.");
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 336, 480);
+    const prev = [...state.imgs.values()].sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    if (prev) ctx.drawImage(prev, (336 - prev.width) / 2, (480 - prev.height) / 2);
+    return;
+  }
+  const host = makeHost(face);
+  window.__band = host;
+  try {
+    const L = newLua();
+    runChunk(L, SHIM, "viewer");
+    state.run = { L, host };
+    host.run(new TextDecoder().decode(face.files.get(face.main)), "main.lua");
+    log("info", `Running ${face.title}`);
+  } catch (e) { log("error", String(e.message || e)); }
+}
+
+// ------------------------------------------------------------------ simulated dataman values
+const WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function now() {
+  if ($("dLive").checked || !$("dTime").value) return new Date();
+  const [h, m] = $("dTime").value.split(":").map(Number);
+  const d = $("dDate").value ? new Date($("dDate").value + "T00:00") : new Date();
+  d.setHours(h, m, new Date().getSeconds(), new Date().getMilliseconds());
+  return d;
+}
+const num = id => Number($(id).value) || 0;
+function simData(name) {
+  const d = now(), is24 = $("d24").checked;
+  const h24 = d.getHours(), h = is24 ? h24 : (h24 % 12 || 12), m = d.getMinutes(), s = d.getSeconds();
+  const v = {
+    timeHour: h, timeMinute: m, timeSecond: s, timeCentiSecond: Math.floor(d.getMilliseconds() / 10),
+    timeHourHigh: Math.floor(h / 10), timeHourLow: h % 10, timeMinuteHigh: Math.floor(m / 10), timeMinuteLow: m % 10,
+    timeSecondHigh: Math.floor(s / 10), timeSecondLow: s % 10,
+    miscIs24H: is24 ? 1 : 0, miscIsAM: h24 < 12 ? 1 : 0,
+    dateYear: d.getFullYear(), dateMonth: d.getMonth() + 1, dateDay: d.getDate(), dateWeek: d.getDay(),
+    dateWeekStringShortPascalEN: WEEK[d.getDay()], dateMonthStringShortPascalEN: MON[d.getMonth()],
+    dateWeekStringShortUpperEN: WEEK[d.getDay()].toUpperCase(), dateMonthStringShortUpperEN: MON[d.getMonth()].toUpperCase(),
+    healthStepCount: num("dSteps"), healthStepProgress: Math.min(100, Math.round(num("dSteps") / 80)),
+    healthStepTarget: 8000, healthHeartRate: num("dHr"), healthCalorie: num("dCal"),
+    healthCalorieProgress: Math.min(100, Math.round(num("dCal") / 4)),
+    healthOxygenSpO2: num("dSpo2"), healthSleepScore: num("dSleep"), healthStandCount: 7,
+    healthStandProgress: 58, healthStress: 32,
+    weatherCurrentTemperature: num("dTemp"), weatherCurrentWeather: num("dWeather"), weatherCurrentHumidity: 55,
+    weatherTodayTemperatureMax: num("dTemp") + 5, weatherTodayTemperatureMin: num("dTemp") - 6,
+    systemStatusBattery: num("dBattery"), systemStatusCharge: $("dCharge").checked ? 1 : 0,
+    systemStatusBluetooth: $("dBt").checked ? 1 : 0, systemStatusDisturb: $("dDnd").checked ? 1 : 0,
+  }[name];
+  return v === undefined ? undefined : v;
+}
+
+// ------------------------------------------------------------------ main loop
+let frames = 0, luaTime = 0, t0 = performance.now(), last = 0, lastCheck = 0;
+function loop(t) {
+  requestAnimationFrame(loop);
+  if (t - last < 16) return; // band-like 60 fps cap regardless of monitor refresh
+  last = t;
+  const run = state.run;
+  if (run) {
+    const a = performance.now();
+    try { run.host.tick(t); const n = run.host.render(state.map); if (frames % 10 === 0) $("objs").textContent = n; }
+    catch (e) { log("error", String(e.message || e)); state.run = null; }
+    luaTime += performance.now() - a;
+    if (t - lastCheck > 500 && state.screenOn) { lastCheck = t; updateSwitchCheck(); }
+  }
+  frames++;
+  if (t - t0 >= 1000) {
+    $("fps").textContent = run ? Math.round(frames * 1000 / (t - t0)) : 0;
+    $("luaMs").textContent = frames ? (luaTime / frames).toFixed(2) : "0";
+    frames = 0; luaTime = 0; t0 = t;
+  }
+}
+requestAnimationFrame(loop);
+
+function updateSwitchCheck() {
+  const el = $("switchCheck");
+  let free = 0; try { free = state.run.host.freeArea(); } catch { return; }
+  el.className = "switch-check " + (free > 0 ? "ok" : "bad");
+  el.textContent = free > 0
+    ? `Switch check ✓ ${free}% of the screen lets long-press through to the band`
+    : "Switch check ✗ every spot takes taps. Long-press may not reach the band here";
+}
+
+// ------------------------------------------------------------------ input
+const pt = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 336 / r.width, (e.clientY - r.top) * 480 / r.height]; };
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); state.run?.host.pointer("down", ...pt(e), performance.now()); });
+cv.addEventListener("pointermove", e => { if (e.buttons) state.run?.host.pointer("move", ...pt(e), performance.now()); });
+cv.addEventListener("pointerup", e => state.run?.host.pointer("up", ...pt(e), performance.now()));
+cv.addEventListener("pointercancel", e => state.run?.host.pointer("up", ...pt(e), performance.now()));
+addEventListener("keydown", e => {
+  if (e.code !== "Space" || e.repeat || /INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement?.tagName)) return;
+  e.preventDefault(); const h = state.run?.host; if (!h) return;
+  h.pointer("down", 168, 240, performance.now()); h.pointer("up", 168, 240, performance.now());
+});
+
+$("restartBtn").onclick = restart;
+$("screenBtn").onclick = () => {
+  if (!state.run) return;
+  state.screenOn = !state.screenOn;
+  state.run.host.screen(state.screenOn);
+  $("screenBtn").textContent = state.screenOn ? "Screen off" : "Screen on";
+  $("screenBtn").classList.toggle("on", !state.screenOn);
+  log("info", state.screenOn ? "pageOnResume()" : "pageOnPause(): timers should stop now");
+};
+$("pngBtn").onclick = () => {
+  const a = document.createElement("a");
+  a.download = (state.face?.title || "band").replace(/[^\w-]+/g, "_") + "_preview.png";
+  a.href = cv.toDataURL("image/png"); a.click();
+};
+$("mapBtn").onclick = () => { state.map = !state.map; $("mapBtn").classList.toggle("on", state.map); };
+$("zoomBtn").onclick = () => {
+  state.zoom = state.zoom === 1 ? 1.5 : state.zoom === 1.5 ? 2 : 1;
+  cv.style.width = 336 * state.zoom + "px"; cv.style.height = 480 * state.zoom + "px";
+  cv.classList.toggle("pixel", state.zoom > 1);
+  $("zoomBtn").textContent = `Zoom ${state.zoom}×`;
+};
+$("clearLog").onclick = () => { $("log").textContent = ""; state.errors = 0; updateErrCount(); };
+$("clearSave").onclick = () => { state.run?.host.clearStore(); toast("Saved /data for this face cleared. Restart to see a fresh run."); };
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("active", p.id === "pane-" + t.dataset.tab));
+});
+
+// ------------------------------------------------------------------ side panels
+function log(level, msg) {
+  const div = document.createElement("div");
+  div.className = level; div.textContent = (level === "print" ? "" : level.toUpperCase() + "  ") + msg;
+  const box = $("log"); box.appendChild(div);
+  while (box.childElementCount > 500) box.firstChild.remove();
+  if (level === "error") { state.errors++; updateErrCount(); }
+}
+function updateErrCount() { const c = $("errCount"); c.hidden = !state.errors; c.textContent = state.errors; }
+function renderInfo(face) {
+  const lua = face.main ? "Lua app (" + face.main + ")" : "image-based (no Lua)";
+  $("info").innerHTML = "";
+  for (const [k, v] of [["Title", face.title], ["ID", face.id || "?"], ["Type", lua], ["Size", (face.size / 1024).toFixed(1) + " KB"], ["Files", face.files.size]]) {
+    const dt = document.createElement("dt"), dd = document.createElement("dd");
+    dt.textContent = k; dd.textContent = v; $("info").append(dt, dd);
+  }
+}
+function renderFiles(face) {
+  const ul = $("fileList"); ul.textContent = "";
+  for (const [name, bytes] of face.files) {
+    const li = document.createElement("li"), th = document.createElement("div"), nm = document.createElement("div"), sz = document.createElement("div");
+    th.className = "thumb"; nm.className = "nm"; sz.className = "sz";
+    const im = state.imgs.get(name.slice(face.base.length));
+    if (im) { const c = im.cloneNode(); th.appendChild(c); sz.textContent = `${im.width}×${im.height} · `; }
+    else th.textContent = name.endsWith(".lua") ? "Lua" : "·";
+    nm.textContent = name; nm.title = name;
+    sz.textContent += bytes.length < 1024 ? bytes.length + " B" : (bytes.length / 1024).toFixed(1) + " KB";
+    li.append(th, nm, sz); ul.appendChild(li);
+  }
+}
+function renderCode(face) {
+  const pre = $("code"); pre.textContent = "";
+  const src = face.main ? new TextDecoder().decode(face.files.get(face.main)) : "-- no main.lua in this face";
+  for (const line of src.split("\n")) { const s = document.createElement("span"); s.textContent = line || " "; pre.appendChild(s); }
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3800);
+}
+
+// ------------------------------------------------------------------ face list (served mode)
+let listing = [], polled = false;
+function highlightList() {
+  document.querySelectorAll(".face").forEach(b => b.classList.toggle("active", b.dataset.key === state.key));
+}
+function renderList() {
+  for (const [dir, el] of [["faces", $("listFaces")]]) {
+    el.textContent = "";
+    const items = listing.filter(f => f.dir === dir);
+    if (!items.length) {
+      const e = document.createElement("div"); e.className = "empty";
+      e.textContent = dir === "faces" ? "Empty. Copy .face files into faces/." : "No builds yet.";
+      el.appendChild(e);
+    }
+    for (const f of items) {
+      const b = document.createElement("button"), n = document.createElement("b"), s = document.createElement("span");
+      b.className = "face"; b.dataset.key = f.dir + "/" + f.name;
+      n.textContent = f.name.replace(/\.face$/, "");
+      s.textContent = `${(f.size / 1024).toFixed(0)} KB · ${new Date(f.mtime * 1000).toLocaleString()}`;
+      b.append(n, s); b.onclick = () => openListed(f); el.appendChild(b);
+    }
+  }
+  highlightList();
+}
+async function openListed(f) {
+  const r = await fetch(f.url, { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status);
+  await openFace(await r.arrayBuffer(), f.dir + "/" + f.name, f.dir + "/" + f.name, f.mtime);
+}
+async function poll() {
+  try {
+    const r = await fetch("api/faces", { cache: "no-store" });
+    const next = await r.json();
+    const sig = JSON.stringify(next);
+    if (sig !== JSON.stringify(listing)) {
+      const added = next.filter(f => !listing.some(o => o.dir === f.dir && o.name === f.name));
+      const first = !polled, prev = listing;
+      listing = next; renderList();
+      const cur = state.key && listing.find(f => f.dir + "/" + f.name === state.key);
+      try {
+        if (cur && cur.mtime !== state.mtime) { await openListed(cur); toast(`${cur.name} changed on disk, reloaded`); }
+        else if (!first && added.length === 1 && added[0].dir === "faces") { await openListed(added[0]); toast(`New face: ${added[0].name}`); }
+      } catch { listing = prev; } // file still being written: try again next poll
+    }
+  } catch {}
+  polled = true;
+  setTimeout(poll, 1500);
+}
+
+// ------------------------------------------------------------------ open / drop
+$("openBtn").onclick = $("dropzone").onclick = () => $("fileInput").click();
+$("dropzone").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("fileInput").click(); } };
+$("fileInput").onchange = async e => { const f = e.target.files[0]; if (f) await openFace(await f.arrayBuffer(), f.name); e.target.value = ""; };
+let dragDepth = 0;
+addEventListener("dragenter", e => { e.preventDefault(); dragDepth++; $("drop").classList.add("show"); });
+addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("drop").classList.remove("show"); } });
+addEventListener("dragover", e => e.preventDefault());
+addEventListener("drop", async e => {
+  e.preventDefault(); dragDepth = 0; $("drop").classList.remove("show");
+  const f = [...e.dataTransfer.files].find(x => /\.face$/i.test(x.name)) || e.dataTransfer.files[0];
+  if (f) await openFace(await f.arrayBuffer(), f.name);
+});
+
+// ------------------------------------------------------------------ boot
+(async () => {
+  if (!SERVED) {
+    $("faceMeta").textContent = "Start the viewer with start.bat (it needs the little local server).";
+    return;
+  }
+  SHIM = await (await fetch("lvgl_shim.lua", { cache: "no-store" })).text();
+  await poll();
+  const want = decodeURIComponent(location.hash.slice(1));
+  const pick = listing.find(f => f.dir + "/" + f.name === want) || listing.find(f => f.dir === "faces") || listing[0];
+  if (pick) await openListed(pick);
+})();
+</script>
+</body>
+</html>
