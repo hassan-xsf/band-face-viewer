@@ -2,10 +2,10 @@
 
 # Band Viewer
 
-**Run Mi Band 10 Pro watchfaces in your browser.**
+**Run Xiaomi Lua watchfaces in your browser: Mi Band 10 Pro, 9 Pro, 8 Pro, Band 10, Band 9, Redmi Watch 4 and 6, Watch S3 and S4.**
 Drop in a `.face`, tap it, long-press it and feed it fake health data, all before it ever touches your wrist.
 
-[![Device](https://img.shields.io/badge/device-Mi%20Band%2010%20Pro-c6f432?style=flat-square)](#)
+[![Devices](https://img.shields.io/badge/devices-9%20Xiaomi%20bands%20%26%20watches-c6f432?style=flat-square)](#devices)
 [![Needs](https://img.shields.io/badge/needs-Python%203%20only-38d6f5?style=flat-square)](#quick-start)
 [![Deps](https://img.shields.io/badge/dependencies-none-ff9f0a?style=flat-square)](#how-it-works)
 [![License](https://img.shields.io/badge/license-MIT-af82ff?style=flat-square)](LICENSE)
@@ -21,13 +21,14 @@ and hoping it doesn't lock you out. Band Viewer cuts that down to **save → loo
 
 ## Features
 
+- ⌚ **9 devices**: real screen size and shape (rounded, narrow or round). Faces named `*_<device>.face` pick their device by themselves
 - ⚡ **Hot reload**: drop `.face` files in `faces/`, and they reload by themselves when rebuilt
 - 👆 **Real input**: click = tap, hold = long-press, Space = tap the centre
 - 🫀 **Fake band data**: time, date, battery, steps, heart rate, calories, SpO₂, sleep, weather, charging, Bluetooth, DND
 - 🛟 **Switch check**: warns if a face grabs every touch and would trap you on the band
 - 🔍 **Inspect**: every file inside the `.face`, the `main.lua` source, and a console with `print()` output and Lua errors
 - 💾 **Persistent storage**: `/data` writes survive reloads, like on the band. One click clears them.
-- 🖼️ **Save PNG**: a 336 × 480 screenshot, ready to use as the face's `preview.png`
+- 🖼️ **Save PNG**: a screenshot at the device's size, ready to use as the face's `preview.png`
 - 📊 **FPS, Lua ms per frame and object count**, so you can spot slow faces early
 
 ## Quick start
@@ -41,6 +42,18 @@ python serve.py        # or double-click start.bat on Windows
 It opens `http://127.0.0.1:8770` and serves only on your own machine. Drop a `.face` into `faces/`, onto the page, or onto `start.bat`.
 
 Need faces to try? Grab some from **[Mi Band 10 Pro Faces](https://github.com/hassan-xsf/miband10pro-faces)**.
+
+## Devices
+
+<img src="docs/devices.png" alt="Faces running on Watch S3, Redmi Watch 4 and 6, Band 9 and Band 10" width="100%">
+
+| Device | Screen | | Device | Screen |
+|---|---|---|---|---|
+| Mi Band 10 Pro / 9 Pro / 8 Pro | 336 × 480 | | Redmi Watch 4 | 390 × 450 |
+| Mi Band 10 | 212 × 520 | | Redmi Watch 6 | 432 × 514 |
+| Mi Band 9 | 192 × 490 | | Xiaomi Watch S3 / S4 | 466 round |
+
+Pick one from **Device** at the top. Screen sizes come from the EasyFace device database.
 
 ## How it works
 
