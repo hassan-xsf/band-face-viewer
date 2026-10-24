@@ -10,6 +10,8 @@ Drop in a `.face`, tap it, long-press it and feed it fake health data, all befor
 [![Deps](https://img.shields.io/badge/dependencies-none-ff9f0a?style=flat-square)](#how-it-works)
 [![License](https://img.shields.io/badge/license-MIT-af82ff?style=flat-square)](LICENSE)
 
+### [▶ Open Band Viewer in your browser](https://hassan-xsf.github.io/band-viewer/)
+
 <img src="docs/viewer.png" alt="Band Viewer running the Stride watchface" width="100%">
 
 </div>
@@ -22,7 +24,8 @@ and hoping it doesn't lock you out. Band Viewer cuts that down to **save → loo
 ## Features
 
 - ⌚ **9 devices**: real screen size and shape (rounded, narrow or round). Faces named `*_<device>.face` pick their device by themselves
-- ⚡ **Hot reload**: drop `.face` files in `faces/`, and they reload by themselves when rebuilt
+- 🌐 **Runs online or locally**: the online version has samples and takes any `.face` you drop on it
+- ⚡ **Hot reload** (local): drop `.face` files in `faces/`, and they reload by themselves when rebuilt
 - 👆 **Real input**: click = tap, hold = long-press, Space = tap the centre
 - 🫀 **Fake band data**: time, date, battery, steps, heart rate, calories, SpO₂, sleep, weather, charging, Bluetooth, DND
 - 🛟 **Switch check**: warns if a face grabs every touch and would trap you on the band
@@ -32,6 +35,11 @@ and hoping it doesn't lock you out. Band Viewer cuts that down to **save → loo
 - 📊 **FPS, Lua ms per frame and object count**, so you can spot slow faces early
 
 ## Quick start
+
+**Online:** open **[hassan-xsf.github.io/band-viewer](https://hassan-xsf.github.io/band-viewer/)**, then drop a `.face` on it
+or try one of the samples. Nothing is uploaded: the face runs entirely in your browser.
+
+**Locally**, for hot reload while you build faces:
 
 ```bash
 git clone https://github.com/hassan-xsf/band-viewer

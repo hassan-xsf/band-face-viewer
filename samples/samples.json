@@ -1,0 +1,32 @@
+[
+ {
+  "name": "lua_stride.face",
+  "size": 830364,
+  "device": "Mi Band 10 Pro"
+ },
+ {
+  "name": "lua_tictactoe.face",
+  "size": 717748,
+  "device": "Mi Band 10 Pro"
+ },
+ {
+  "name": "lua_expenses.face",
+  "size": 771392,
+  "device": "Mi Band 10 Pro"
+ },
+ {
+  "name": "lua_stride_watchs3.face",
+  "size": 327836,
+  "device": "Watch S3"
+ },
+ {
+  "name": "lua_calculator_redmiwatch6.face",
+  "size": 154280,
+  "device": "Redmi Watch 6"
+ },
+ {
+  "name": "lua_tictactoe_band10.face",
+  "size": 143880,
+  "device": "Mi Band 10"
+ }
+]
