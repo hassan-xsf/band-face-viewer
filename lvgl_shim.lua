@@ -4,7 +4,7 @@
 local js = require "js"
 local H = js.global.__band
 local floor, max, min = math.floor, math.max, math.min
-local SW, SH = 336, 480
+local SW, SH = H.screenW or 336, H.screenH or 480 -- the device picked in the viewer
 
 local roots, timers, anims, subs = {}, {}, {}, {}
 local warned = {}

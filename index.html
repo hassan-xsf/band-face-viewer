@@ -75,7 +75,7 @@ section.stage { display: flex; flex-direction: column; align-items: center; padd
 .title-row .name { font-size: 18px; font-weight: 650; }
 .title-row .meta { color: var(--muted); font-size: 12.5px; }
 .band {
-  position: relative; padding: 16px; border-radius: 72px; background: var(--band); margin: 28px 0;
+  position: relative; padding: 16px; border-radius: var(--frame-r, 72px); background: var(--band); margin: 28px 0;
   box-shadow: 0 0 0 2px var(--band-edge), 0 24px 60px rgba(0,0,0,.35);
 }
 .band::before, .band::after {
@@ -85,7 +85,7 @@ section.stage { display: flex; flex-direction: column; align-items: center; padd
 .band::before { top: -30px; border-radius: 16px 16px 0 0; }
 .band::after { bottom: -30px; border-radius: 0 0 16px 16px; transform: translateX(-50%) scaleY(-1); }
 canvas#screen {
-  display: block; width: 336px; height: 480px; border-radius: 56px; background: #000;
+  display: block; width: 336px; height: 480px; border-radius: var(--screen-r, 56px); background: #000;
   touch-action: none; cursor: pointer; user-select: none;
 }
 canvas#screen.pixel { image-rendering: pixelated; }
@@ -144,7 +144,7 @@ pre.code span::before { counter-increment: ln; content: counter(ln); display: in
   section.stage { order: -1; }
 }
 @media (max-width: 420px) {
-  canvas#screen { width: calc(100vw - 64px); height: auto; aspect-ratio: 336 / 480; border-radius: 44px; }
+  canvas#screen { width: calc(100vw - 64px) !important; height: auto !important; }
   header .sub { display: none; }
 }
 </style>
@@ -152,7 +152,8 @@ pre.code span::before { counter-increment: ln; content: counter(ln); display: in
 <body>
 <header>
   <h1>Band Viewer</h1>
-  <span class="sub">Mi Band 10 Pro · 336 × 480 · Lua watchfaces</span>
+  <span class="sub" id="devSub">Mi Band 10 Pro · 336 × 480 · Lua watchfaces</span>
+  <label class="sub">Device <select id="devSel" title="Screen to emulate. Faces named *_<device>.face pick it by themselves."></select></label>
   <span class="grow"></span>
   <button class="btn primary" id="openBtn">Open .face</button>
   <input type="file" id="fileInput" accept=".face" hidden>
@@ -181,7 +182,7 @@ pre.code span::before { counter-increment: ln; content: counter(ln); display: in
       <button class="btn" id="screenBtn" title="Calls pageOnPause / pageOnResume like the band does">Screen off</button>
       <button class="btn" id="mapBtn" title="Highlight everything that takes taps">Touch map</button>
       <button class="btn" id="zoomBtn">Zoom 1×</button>
-      <button class="btn" id="pngBtn" title="Download this screen as a 336×480 PNG (use it as images/preview.png)">Save PNG</button>
+      <button class="btn" id="pngBtn" title="Download this screen as a PNG at the device's size (use it as images/preview.png)">Save PNG</button>
     </div>
     <div class="switch-check" id="switchCheck">Switch check: waiting</div>
     <div class="hint">Click = tap · hold = long-press · Space = tap the centre. Long-press empty space to test that you can still leave the watchface.</div>
@@ -283,6 +284,34 @@ const state = {
   map: false, zoom: 1, screenOn: true, errors: 0,
 };
 
+// ------------------------------------------------------------------ devices (EasyFace DeviceInfo.db)
+// r = screen corner radius in px; round screens use r = w / 2
+const DEVICES = [
+  { id: "band10pro", name: "Mi Band 10 Pro", w: 336, h: 480, r: 56 },
+  { id: "band9pro", name: "Mi Band 9 Pro", w: 336, h: 480, r: 56 },
+  { id: "band8pro", name: "Mi Band 8 Pro", w: 336, h: 480, r: 56 },
+  { id: "band10", name: "Mi Band 10", w: 212, h: 520, r: 106 },
+  { id: "band9", name: "Mi Band 9", w: 192, h: 490, r: 90 },
+  { id: "redmiwatch4", name: "Redmi Watch 4", w: 390, h: 450, r: 80 },
+  { id: "redmiwatch6", name: "Redmi Watch 6", w: 432, h: 514, r: 80 },
+  { id: "watchs3", name: "Xiaomi Watch S3", w: 466, h: 466, r: 233 },
+  { id: "watchs4", name: "Xiaomi Watch S4", w: 466, h: 466, r: 233 },
+];
+let dev = DEVICES[0];
+function setDevice(id) {
+  dev = DEVICES.find(d => d.id === id) || DEVICES[0];
+  $("devSel").value = dev.id;
+  const round = dev.w === dev.h && dev.r * 2 >= dev.w;
+  $("devSub").textContent = `${dev.name} · ${dev.w} × ${dev.h} · Lua watchfaces`;
+  cv.width = dev.w; cv.height = dev.h;
+  cv.style.width = dev.w * state.zoom + "px"; cv.style.height = dev.h * state.zoom + "px";
+  cv.style.aspectRatio = `${dev.w} / ${dev.h}`;
+  cv.style.setProperty("--screen-r", round ? "50%" : dev.r + "px");
+  cv.parentElement.style.setProperty("--frame-r", round ? "50%" : dev.r + 16 + "px");
+}
+// faces built by port/port.py end in _<device>.face
+const deviceOf = name => (DEVICES.find(d => name.toLowerCase().endsWith("_" + d.id + ".face")) || DEVICES[0]).id;
+
 // ------------------------------------------------------------------ host for the Lua shim
 function makeHost(face) {
   const base = "/face/" + face.base;
@@ -313,12 +342,13 @@ function makeHost(face) {
   };
   return {
     scriptPath: base,
+    screenW: dev.w, screenH: dev.h,
     log: (lvl, msg) => log(lvl, msg),
     hasImg: src => !!imgFor(src),
     imgW: src => imgFor(src)?.width ?? 0,
     imgH: src => imgFor(src)?.height ?? 0,
     measure: (s, size, weight) => { ctx.font = fontOf(size, weight); return ctx.measureText(s).width; },
-    clear: () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 336, 480); },
+    clear: () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.fillRect(0, 0, dev.w, dev.h); },
     rect: (x, y, w, h, c, a, r, bw, bc, ba) => {
       if (a > 0) { ctx.globalAlpha = a; ctx.fillStyle = hex(c); roundRect(x, y, w, h, r); ctx.fill(); }
       if (bw > 0 && ba > 0) {
@@ -404,6 +434,7 @@ async function openFace(buf, label, key, mtime) {
   let face;
   try { face = parseFace(buf); } catch (e) { toast("Not a .face file: " + e.message); return; }
   state.face = face; state.key = key || null; state.mtime = mtime || 0;
+  setDevice(deviceOf(key || label || ""));
   if (key) history.replaceState(null, "", "#" + encodeURIComponent(key));
   await loadImages(face);
   await document.fonts.load('600 20px "MiSans"').catch(() => {});
@@ -420,9 +451,9 @@ function restart() {
   state.run = null;
   if (!face.main) {
     log("warn", "No main.lua in this .face: it's an image-based watchface, not a Lua one. Its files are listed under Files.");
-    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 336, 480);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, dev.w, dev.h);
     const prev = [...state.imgs.values()].sort((a, b) => b.width * b.height - a.width * a.height)[0];
-    if (prev) ctx.drawImage(prev, (336 - prev.width) / 2, (480 - prev.height) / 2);
+    if (prev) ctx.drawImage(prev, (dev.w - prev.width) / 2, (dev.h - prev.height) / 2);
     return;
   }
   const host = makeHost(face);
@@ -504,7 +535,7 @@ function updateSwitchCheck() {
 }
 
 // ------------------------------------------------------------------ input
-const pt = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 336 / r.width, (e.clientY - r.top) * 480 / r.height]; };
+const pt = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * dev.w / r.width, (e.clientY - r.top) * dev.h / r.height]; };
 cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); state.run?.host.pointer("down", ...pt(e), performance.now()); });
 cv.addEventListener("pointermove", e => { if (e.buttons) state.run?.host.pointer("move", ...pt(e), performance.now()); });
 cv.addEventListener("pointerup", e => state.run?.host.pointer("up", ...pt(e), performance.now()));
@@ -512,10 +543,13 @@ cv.addEventListener("pointercancel", e => state.run?.host.pointer("up", ...pt(e)
 addEventListener("keydown", e => {
   if (e.code !== "Space" || e.repeat || /INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement?.tagName)) return;
   e.preventDefault(); const h = state.run?.host; if (!h) return;
-  h.pointer("down", 168, 240, performance.now()); h.pointer("up", 168, 240, performance.now());
+  h.pointer("down", dev.w / 2, dev.h / 2, performance.now()); h.pointer("up", dev.w / 2, dev.h / 2, performance.now());
 });
 
 $("restartBtn").onclick = restart;
+$("devSel").innerHTML = DEVICES.map(d => `<option value="${d.id}">${d.name}</option>`).join("");
+$("devSel").onchange = e => { setDevice(e.target.value); restart(); };
+setDevice(dev.id);
 $("screenBtn").onclick = () => {
   if (!state.run) return;
   state.screenOn = !state.screenOn;
@@ -532,7 +566,7 @@ $("pngBtn").onclick = () => {
 $("mapBtn").onclick = () => { state.map = !state.map; $("mapBtn").classList.toggle("on", state.map); };
 $("zoomBtn").onclick = () => {
   state.zoom = state.zoom === 1 ? 1.5 : state.zoom === 1.5 ? 2 : 1;
-  cv.style.width = 336 * state.zoom + "px"; cv.style.height = 480 * state.zoom + "px";
+  cv.style.width = dev.w * state.zoom + "px"; cv.style.height = dev.h * state.zoom + "px";
   cv.classList.toggle("pixel", state.zoom > 1);
   $("zoomBtn").textContent = `Zoom ${state.zoom}×`;
 };
