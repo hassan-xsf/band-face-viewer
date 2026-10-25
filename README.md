@@ -93,6 +93,9 @@ addresses.
 - [m0tral](https://github.com/m0tral): his [Lua watchface examples](https://github.com/m0tral/MiWatchLuaWatchfaces) and
   [EasyFace](https://github.com/m0tral/EasyFace) compiler documented the band's Lua API and `.face` format this emulates
 - MiSans font: Xiaomi (MiSans license)
+- Flappy Bird sample: game by Dong Nguyen (.GEARS); sprites from
+  [samuelcust/flappy-bird-assets](https://github.com/samuelcust/flappy-bird-assets) and
+  [mrspeaker/wafty-man](https://github.com/mrspeaker/wafty-man). Art belongs to its owners, personal use only
 
 ## License
 

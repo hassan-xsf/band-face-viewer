@@ -5,8 +5,18 @@
   "device": "Mi Band 10 Pro"
  },
  {
+  "name": "lua_flappy.face",
+  "size": 797304,
+  "device": "Mi Band 10 Pro"
+ },
+ {
   "name": "lua_tictactoe.face",
   "size": 717748,
+  "device": "Mi Band 10 Pro"
+ },
+ {
+  "name": "lua_calculator.face",
+  "size": 654092,
   "device": "Mi Band 10 Pro"
  },
  {
