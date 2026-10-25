@@ -1,4 +1,4 @@
--- Band Viewer: a small LVGL + dataman stand-in so watchface main.lua files run
+-- Band Face Viewer: a small LVGL + dataman stand-in so watchface main.lua files run
 -- in the browser (fengari, Lua 5.3). Mirrors the luavgl API used on the band.
 -- Anything not emulated logs a warning instead of crashing.
 local js = require "js"

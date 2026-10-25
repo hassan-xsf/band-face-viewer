@@ -1,25 +1,33 @@
 <div align="center">
 
-# Band Viewer
+<img src="docs/og.png" alt="Band Face Viewer: run Xiaomi watchfaces in your browser" width="100%">
 
-**Run Xiaomi Lua watchfaces in your browser: Mi Band 10 Pro, 9 Pro, 8 Pro, Band 10, Band 9, Redmi Watch 4 and 6, Watch S3 and S4.**
-Drop in a `.face`, tap it, long-press it and feed it fake health data, all before it ever touches your wrist.
+# Band Face Viewer
+
+**Run Xiaomi Lua watchfaces in your browser.** Mi Band 10 Pro, 9 Pro, 8 Pro, Band 10, Band 9, Redmi Watch 4 and 6, Watch S3 and S4.<br>
+Drop in a `.face`, tap it, long-press it, feed it fake health data. See exactly how it behaves before it touches your wrist.
+
+[![Open in your browser](https://img.shields.io/badge/Open_in_your_browser-c6f432?style=for-the-badge&logoColor=10140a&labelColor=10140a&color=c6f432)](https://hassan-xsf.github.io/band-face-viewer/)
 
 [![Devices](https://img.shields.io/badge/devices-9%20Xiaomi%20bands%20%26%20watches-c6f432?style=flat-square)](#devices)
-[![Needs](https://img.shields.io/badge/needs-Python%203%20only-38d6f5?style=flat-square)](#quick-start)
+[![Needs](https://img.shields.io/badge/install-nothing-38d6f5?style=flat-square)](https://hassan-xsf.github.io/band-face-viewer/)
 [![Deps](https://img.shields.io/badge/dependencies-none-ff9f0a?style=flat-square)](#how-it-works)
 [![License](https://img.shields.io/badge/license-MIT-af82ff?style=flat-square)](LICENSE)
 
-### [▶ Open Band Viewer in your browser](https://hassan-xsf.github.io/band-viewer/)
-
-<img src="docs/viewer.png" alt="Band Viewer running the Stride watchface" width="100%">
+<table><tr>
+<td width="34%" align="center"><img src="docs/flappy.gif" alt="Flappy Bird running as a Mi Band 10 Pro watchface in the viewer" width="100%"><br><sub>A real <code>.face</code>, Lua and all, running live</sub></td>
+<td width="66%" align="center"><img src="docs/viewer.png" alt="Band Face Viewer with the Stride watchface, device picker, data panel and console" width="100%"><br><sub>Fake band data, files, source and a Lua console</sub></td>
+</tr></table>
 
 </div>
 
 ## Why
 
 Testing a watchface on the band means building it, sending it to your phone, installing it over Bluetooth, selecting it,
-and hoping it doesn't lock you out. Band Viewer cuts that down to **save → look**.
+and hoping it doesn't lock you out. Band Face Viewer cuts that down to **save, look**.
+
+- **Making faces?** See every change instantly, catch Lua errors with line numbers, and check the face on 9 screens.
+- **Downloading faces?** Try a `.face` before you install it, or check it still lets you swipe away. Then hit **Download .face**.
 
 ## Features
 
@@ -31,19 +39,20 @@ and hoping it doesn't lock you out. Band Viewer cuts that down to **save → loo
 - **Switch check**: warns if a face grabs every touch and would trap you on the band
 - **Inspect**: every file inside the `.face`, the `main.lua` source, and a console with `print()` output and Lua errors
 - **Persistent storage**: `/data` writes survive reloads, like on the band. One click clears them.
+- **Download .face**: grab any sample or the face you're viewing, ready to install with Gadgetbridge
 - **Save PNG**: a screenshot at the device's size, ready to use as the face's `preview.png`
 - **FPS, Lua ms per frame and object count**, so you can spot slow faces early
 
 ## Quick start
 
-**Online:** open **[hassan-xsf.github.io/band-viewer](https://hassan-xsf.github.io/band-viewer/)**, then drop a `.face` on it
+**Online:** open **[hassan-xsf.github.io/band-face-viewer](https://hassan-xsf.github.io/band-face-viewer/)**, then drop a `.face` on it
 or try one of the samples. Nothing is uploaded: the face runs entirely in your browser.
 
 **Locally**, for hot reload while you build faces:
 
 ```bash
-git clone https://github.com/hassan-xsf/band-viewer
-cd band-viewer
+git clone https://github.com/hassan-xsf/band-face-viewer
+cd band-face-viewer
 python serve.py        # or double-click start.bat on Windows
 ```
 

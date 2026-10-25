@@ -3,7 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Band Viewer</title>
+<title>Band Face Viewer · Run Xiaomi watchfaces in your browser</title>
+<meta name="description" content="Run Xiaomi watchfaces in your browser. Test .face files for Mi Band 8 Pro, 9, 9 Pro, 10, 10 Pro, Redmi Watch 4, 6 and Watch S3, S4 without touching your band.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Band Face Viewer">
+<meta property="og:description" content="Run Xiaomi watchfaces in your browser. Test .face files for Mi Band 8 Pro, 9, 9 Pro, 10, 10 Pro, Redmi Watch 4, 6 and Watch S3, S4 without touching your band.">
+<meta property="og:url" content="https://hassan-xsf.github.io/band-face-viewer/">
+<meta property="og:image" content="https://hassan-xsf.github.io/band-face-viewer/docs/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#08090b">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%228%22 y=%222%22 width=%2216%22 height=%2228%22 rx=%226%22 fill=%22%23c6f432%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,6 +78,7 @@ header .grow { flex: 1; }
 .btn:hover { border-color: var(--accent); }
 .btn:active { transform: translateY(1px); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 22px var(--glow); }
+.btn:disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
 .btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .btn:focus-visible, .tab:focus-visible, .face:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -199,11 +208,12 @@ pre.code span::before { counter-increment: ln; content: counter(ln); display: in
 </head>
 <body>
 <header>
-  <h1><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="3.5"/><path d="M9 6V3h6v3M9 18v3h6v-3M12 9.5V12l1.6 1.2"/></svg></span>Band Viewer</h1>
+  <h1><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="6" width="12" height="12" rx="3.5"/><path d="M9 6V3h6v3M9 18v3h6v-3M12 9.5V12l1.6 1.2"/></svg></span>Band Face Viewer</h1>
   <span class="sub" id="devSub">Mi Band 10 Pro · 336 × 480 · Lua watchfaces</span>
   <label class="sub">Device <select id="devSel" title="Screen to emulate. Faces named *_<device>.face pick it by themselves."></select></label>
   <span class="grow"></span>
-  <button class="btn primary" id="openBtn">Open .face</button>
+  <button class="btn" id="openBtn">Open .face</button>
+  <button class="btn primary" id="dlBtn" disabled title="Save this .face, then install it on your band with Gadgetbridge">Download .face</button>
   <input type="file" id="fileInput" accept=".face" hidden>
 </header>
 
@@ -482,6 +492,7 @@ async function openFace(buf, label, key, mtime) {
   let face;
   try { face = parseFace(buf); } catch (e) { toast("Not a .face file: " + e.message); return; }
   state.face = face; state.key = key || null; state.mtime = mtime || 0;
+  state.buf = buf; state.file = (key || label).split("/").pop(); $("dlBtn").disabled = false;
   setDevice(deviceOf(key || label || ""));
   if (key) history.replaceState(null, "", "#" + encodeURIComponent(key));
   await loadImages(face);
@@ -610,6 +621,11 @@ $("pngBtn").onclick = () => {
   const a = document.createElement("a");
   a.download = (state.face?.title || "band").replace(/[^\w-]+/g, "_") + "_preview.png";
   a.href = cv.toDataURL("image/png"); a.click();
+};
+$("dlBtn").onclick = () => {
+  const a = document.createElement("a");
+  a.download = state.file; a.href = URL.createObjectURL(new Blob([state.buf]));
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 $("mapBtn").onclick = () => { state.map = !state.map; $("mapBtn").classList.toggle("on", state.map); };
 $("zoomBtn").onclick = () => {

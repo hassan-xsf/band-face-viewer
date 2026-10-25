@@ -1,4 +1,4 @@
-# Band Viewer server: serves the viewer and lists every .face in faces/
+# Band Face Viewer server: serves the viewer and lists every .face in faces/
 # The page polls the list, so new or rebuilt faces show up (and
 # reload) on their own.
 # Usage: python serve.py [some.face ...]   (given files are copied into faces/)
@@ -70,7 +70,7 @@ def main():
     except OSError:  # already running: just open the page
         webbrowser.open(url)
         return
-    print(f"Band Viewer on {url}  (Ctrl+C to stop)")
+    print(f"Band Face Viewer on {url}  (Ctrl+C to stop)")
     print(f"Drop .face files into {DIRS['faces']}")
     webbrowser.open(url)
     try:
