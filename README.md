@@ -23,16 +23,16 @@ and hoping it doesn't lock you out. Band Viewer cuts that down to **save → loo
 
 ## Features
 
-- ⌚ **9 devices**: real screen size and shape (rounded, narrow or round). Faces named `*_<device>.face` pick their device by themselves
-- 🌐 **Runs online or locally**: the online version has samples and takes any `.face` you drop on it
-- ⚡ **Hot reload** (local): drop `.face` files in `faces/`, and they reload by themselves when rebuilt
-- 👆 **Real input**: click = tap, hold = long-press, Space = tap the centre
-- 🫀 **Fake band data**: time, date, battery, steps, heart rate, calories, SpO₂, sleep, weather, charging, Bluetooth, DND
-- 🛟 **Switch check**: warns if a face grabs every touch and would trap you on the band
-- 🔍 **Inspect**: every file inside the `.face`, the `main.lua` source, and a console with `print()` output and Lua errors
-- 💾 **Persistent storage**: `/data` writes survive reloads, like on the band. One click clears them.
-- 🖼️ **Save PNG**: a screenshot at the device's size, ready to use as the face's `preview.png`
-- 📊 **FPS, Lua ms per frame and object count**, so you can spot slow faces early
+- **9 devices**: real screen size and shape (rounded, narrow or round). Faces named `*_<device>.face` pick their device by themselves
+- **Runs online or locally**: the online version has samples and takes any `.face` you drop on it
+- **Hot reload** (local): drop `.face` files in `faces/`, and they reload by themselves when rebuilt
+- **Real input**: click = tap, hold = long-press, Space = tap the centre
+- **Fake band data**: time, date, battery, steps, heart rate, calories, SpO₂, sleep, weather, charging, Bluetooth, DND
+- **Switch check**: warns if a face grabs every touch and would trap you on the band
+- **Inspect**: every file inside the `.face`, the `main.lua` source, and a console with `print()` output and Lua errors
+- **Persistent storage**: `/data` writes survive reloads, like on the band. One click clears them.
+- **Save PNG**: a screenshot at the device's size, ready to use as the face's `preview.png`
+- **FPS, Lua ms per frame and object count**, so you can spot slow faces early
 
 ## Quick start
 
