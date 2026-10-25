@@ -100,6 +100,10 @@ h2:first-child { margin-top: 2px; }
 .face b { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .face span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .empty { color: var(--muted); font-size: 13px; padding: 4px 8px; }
+.more { display: block; margin: 12px 0 0; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line2); background: var(--panel); color: var(--text); text-decoration: none; font-size: 12.5px; line-height: 1.45; transition: border-color .15s; }
+.more:hover { border-color: var(--accent); }
+.more b { display: block; color: var(--accent); font: 600 14px "Chakra Petch", sans-serif; }
+.more span { color: var(--muted); }
 .dropzone {
   margin-top: 16px; border: 1.5px dashed var(--line2); border-radius: 14px; padding: 22px 12px;
   text-align: center; color: var(--muted); font-size: 13px; cursor: pointer; transition: .15s;
@@ -222,6 +226,7 @@ pre.code span::before { counter-increment: ln; content: counter(ln); display: in
     <h2 id="listHead">Drop folder · faces/</h2>
     <div id="listFaces"></div>
     <div class="dropzone" id="dropzone" role="button" tabindex="0">Drop a <b>.face</b> here<br>or click to pick one</div>
+    <a class="more" href="https://hassan-xsf.github.io/band-face-pack/" target="_blank" rel="noopener"><b>Want more faces?</b><span>Band Face Pack: games, tools and a running face for 9 watches</span></a>
   </aside>
 
   <section class="stage">

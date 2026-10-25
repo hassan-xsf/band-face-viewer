@@ -12,6 +12,7 @@ Drop in a `.face`, tap it, long-press it, feed it fake health data. See exactly 
 [![Devices](https://img.shields.io/badge/devices-9%20Xiaomi%20bands%20%26%20watches-c6f432?style=flat-square)](#devices)
 [![Needs](https://img.shields.io/badge/install-nothing-38d6f5?style=flat-square)](https://hassan-xsf.github.io/band-face-viewer/)
 [![Deps](https://img.shields.io/badge/dependencies-none-ff9f0a?style=flat-square)](#how-it-works)
+[![Faces](https://img.shields.io/badge/faces-Band%20Face%20Pack-38d6f5?style=flat-square)](https://hassan-xsf.github.io/band-face-pack/)
 [![License](https://img.shields.io/badge/license-MIT-af82ff?style=flat-square)](LICENSE)
 
 <table><tr>
@@ -58,7 +59,7 @@ python serve.py        # or double-click start.bat on Windows
 
 It opens `http://127.0.0.1:8770` and serves only on your own machine. Drop a `.face` into `faces/`, onto the page, or onto `start.bat`.
 
-Need faces to try? Grab some from **[Mi Band 10 Pro Faces](https://github.com/hassan-xsf/miband10pro-faces)**.
+Need faces to try? Get **[Band Face Pack](https://hassan-xsf.github.io/band-face-pack/)**: Flappy Bird, Tic Tac Toe, a running face and more for 9 watches.
 
 ## Devices
 
@@ -87,6 +88,17 @@ faces/*.face ──► serve.py ──► index.html ──► fengari (Lua) + l
 
 It's an emulator, not the band. Fonts, timing and a few less common widgets differ slightly, and native (C) apps don't
 run. Always do a final check on the real band.
+
+## Related
+
+**[Band Face Pack](https://github.com/hassan-xsf/band-face-pack)** has ready-made faces for 9 Xiaomi bands and watches:
+the Stride running face, Flappy Bird, Tic Tac Toe, Calculator and Expenses, plus native apps for the Mi Band 10 Pro.
+Pick your watch on the **[download page](https://hassan-xsf.github.io/band-face-pack/)** and install with Gadgetbridge. Every one of them runs in this viewer.
+
+## Help and contact
+
+- Found a bug or a face that renders wrong? **[Open an issue](../../issues/new)**.
+- Anything else: email **[hassandev45@gmail.com](mailto:hassandev45@gmail.com)**.
 
 ## Troubleshooting
 
